@@ -1,7 +1,8 @@
 import unittest
 import numpy as np
 
-from src.layers import Dense, ReLU
+from src.layers import Dense
+from src.layers.activation import ReLU, Sigmoid
 from .utils import eval_numerical_gradient_array
 
 
@@ -50,6 +51,7 @@ class TestDenseLayer(unittest.TestCase):
         layer.built = True
         layer.parameters["w"] = w
         layer.parameters["b"] = b
+        layer.reset_gradients()
 
         def forward(x, w, b):
             return x.reshape((x.shape[0], -1)) @ w + b
@@ -59,7 +61,8 @@ class TestDenseLayer(unittest.TestCase):
         db_num = eval_numerical_gradient_array(lambda b: forward(x, w, b), b, dout)
 
         _ = layer(x)
-        dx, dw, db = layer.backward(dout)
+        dx = layer.backward(dout)
+        dw, db = layer.gradients["w"], layer.gradients["b"]
 
         self.assertTrue(np.allclose(dx, dx_num))
         self.assertTrue(np.allclose(dw, dw_num))
@@ -75,6 +78,7 @@ class TestDenseLayer(unittest.TestCase):
         layer.built = True
         layer.parameters["w"] = w
         layer.parameters["b"] = b
+        layer.reset_gradients()
 
         def forward(x, w, b):
             out = x.reshape((x.shape[0], -1)) @ w + b
@@ -86,7 +90,8 @@ class TestDenseLayer(unittest.TestCase):
 
         _ = layer(x)
 
-        dx, dw, db = layer.backward(dout)
+        dx = layer.backward(dout)
+        dw, db = layer.gradients["w"], layer.gradients["b"]
 
         self.assertTrue(np.allclose(dx, dx_num))
         self.assertTrue(np.allclose(dw, dw_num))
@@ -114,6 +119,27 @@ class TestReLULayer(unittest.TestCase):
         _ = layer(self.x)
         dx = layer.backward(dout)
         dx_num = eval_numerical_gradient_array(lambda x: np.maximum(x, 0), self.x, dout)
+        self.assertTrue(np.allclose(dx, dx_num))
+
+
+class TestSigmoidLayer(unittest.TestCase):
+
+    def setUp(self):
+        self.x = np.linspace(-0.5, 0.5, num=12).reshape(3, 4)
+
+    def test_forward(self):
+        layer = Sigmoid()
+        out = layer.forward(self.x)
+        expected = 1 / (1 + np.exp(-self.x))
+        self.assertEqual(out.shape, self.x.shape)
+        self.assertTrue(np.allclose(out, expected))
+
+    def test_backward(self):
+        dout = np.random.randn(*self.x.shape)
+        layer = Sigmoid()
+        _ = layer.forward(self.x)
+        dx = layer.backward(dout)
+        dx_num = eval_numerical_gradient_array(lambda x: 1 / (1 + np.exp(-self.x)), self.x, dout)
         self.assertTrue(np.allclose(dx, dx_num))
 
 

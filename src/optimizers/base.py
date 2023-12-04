@@ -14,11 +14,11 @@ class BaseOptimizer(abc.ABC):
     def step(self, parameter, gradient):
         pass
 
-    def update(self, layers: List[BaseLayer]):
+    def update(self, layers: List[BaseLayer], batch_size):
         for layer in layers:
             if layer.parameters is None:
                 continue
             for key, parameter in layer.parameters.items():
-                gradient = layer.gradients[key]
+                gradient = layer.gradients[key] / batch_size
                 updated_parameter = self.step(parameter, gradient)
                 layer.parameters[key] = updated_parameter

@@ -3,19 +3,12 @@ import numpy as np
 from .base import BaseLayer
 
 
-def glorot_normal_init(shape, gain=1.0):
-    fan_in, fan_out = shape[0], shape[1]
-    std_dev = gain * np.sqrt(2.0 / (fan_in + fan_out))
-    return np.random.normal(loc=0.0, scale=std_dev, size=shape)
-
-
 class Dense(BaseLayer):
 
-    def __init__(self, units, activation=None, weight_scale=1e-2):
+    def __init__(self, units, activation=None):
         super().__init__()
         self.units = units
         self.activation = activation
-        self.weight_scale = weight_scale
         self.parameters = {"w": None, "b": None}
         self.gradients = {"w": None, "b": None}
 
@@ -27,8 +20,10 @@ class Dense(BaseLayer):
     def b(self):
         return self.parameters["b"]
 
-    def weight_initializer(self, shape):
-        return np.random.normal(0.0, self.weight_scale, shape)
+    def weight_initializer(self, shape, gain=2.0):
+        fan_in, fan_out = shape[0], shape[1]
+        std_dev = gain * np.sqrt(2.0 / (fan_in + fan_out))
+        return np.random.normal(loc=0.0, scale=std_dev, size=shape)
 
     def reset_gradients(self):
         self.gradients["w"] = np.zeros_like(self.parameters["w"])
